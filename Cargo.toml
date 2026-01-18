@@ -1,0 +1,21 @@
+[package]
+name = "expense_tracker"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# The Web Framework (The API Server)
+axum = "0.7"
+
+# The Engine (Allows doing multiple things at once)
+tokio = { version = "1.0", features = ["full"] }
+
+# The Translator (Converts Rust data to JSON and back)
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# The Messenger (Talks to external APIs like Appwrite)
+reqwest = { version = "0.11", features = ["json"] }
+
+# Environment variables (Reads your .env file)
+dotenv = "0.15"
