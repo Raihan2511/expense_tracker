@@ -4,6 +4,7 @@ use dotenv::dotenv;
 
 // This struct holds the configuration we need to talk to Appwrite
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct AppwriteService {
     client: Client,
     pub endpoint: String,
@@ -26,6 +27,42 @@ impl AppwriteService {
             project_id: env::var("APPWRITE_PROJECT_ID").expect("APPWRITE_PROJECT_ID must be set"),
             api_key: env::var("APPWRITE_API_KEY").expect("APPWRITE_API_KEY must be set"),
             database_id: env::var("APPWRITE_DATABASE_ID").expect("APPWRITE_DATABASE_ID must be set"),
+        }
+    }
+
+    // The new function to save data
+    pub async fn create_document(
+        &self, 
+        collection_id: &str, 
+        data: serde_json::Value
+    ) -> Result<serde_json::Value, String> {
+        
+        // 1. Construct the specific URL for this collection
+        let url = format!(
+            "{}/databases/{}/collections/{}/documents", 
+            self.endpoint, 
+            self.database_id, 
+            collection_id
+        );
+
+        // 2. Send the POST request
+        let response = self.client.post(&url)
+            .header("X-Appwrite-Project", &self.project_id)
+            .header("X-Appwrite-Key", &self.api_key)
+            .header("Content-Type", "application/json")
+            .json(&serde_json::json!({
+                "documentId": "unique()", // Ask Appwrite to generate a random ID
+                "data": data
+            }))
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        // 3. Check if it worked
+        if response.status().is_success() {
+            Ok(response.json().await.map_err(|e| e.to_string())?)
+        } else {
+            Err(format!("Error: {:?}", response.text().await))
         }
     }
 }

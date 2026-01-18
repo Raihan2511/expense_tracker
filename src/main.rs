@@ -1,29 +1,37 @@
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, post}, // <--- We now import 'post' as well
+    Router,
+};
 use std::net::SocketAddr;
 
-// 1. We need to tell Rust to look at our "clients" folder.
-// What line goes here to import the clients module?
-mod clients; 
-mod handlers; // We'll need this later too
+// Register the modules so Rust knows they exist
+mod clients;
+mod handlers;
 mod models;
+mod error; 
 
 use clients::appwrite::AppwriteService;
+// Import the actual logic function we wrote
+use handlers::expense::create_expense;
+// use handlers::user::*; // Uncomment if needed, or keeping it clean for now.
 
 #[tokio::main]
 async fn main() {
-    // 2. Initialize the Appwrite Service
-    // This calls the 'new()' function you wrote in src/clients/appwrite.rs
+    // 1. Load environment variables
+    dotenv::dotenv().ok();
+
+    // 2. Initialize the Appwrite Service (The Master Key)
     let appwrite_service = AppwriteService::new();
+    println!("✅ Appwrite Service initialized!");
 
-    println!("✅ Connection to Appwrite configured!");
-
-    // 3. Create the Router
-    // We attach the service to the router so our handlers can access it later.
+    // 3. Define the Routes
     let app = Router::new()
         .route("/", get(health_check))
-        .with_state(appwrite_service); // <--- This is the magic sauce!
+        // We use POST here because we are CREATING an expense
+        .route("/expenses", post(create_expense)) 
+        .with_state(appwrite_service);
 
-    // 4. Run the Server
+    // 4. Start the Server
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     println!("🚀 Server started on http://{}", addr);
 

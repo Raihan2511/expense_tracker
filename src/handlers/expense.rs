@@ -1,15 +1,30 @@
 use axum::{extract::State, Json};
 use serde_json::{json, Value};
+use crate::models::expense::Expense;
 use crate::clients::appwrite::AppwriteService;
+use std::env;
 
-// This function borrows the "AppwriteService" from the server state!
-pub async fn test_connection(
-    State(appwrite): State<AppwriteService>
+pub async fn create_expense(
+    State(appwrite): State<AppwriteService>,
+    Json(payload): Json<Expense>, 
 ) -> Json<Value> {
-    // We are just returning a success message for now
-    Json(json!({
-        "status": "success",
-        "message": "I have access to Appwrite keys!",
-        "project_id": appwrite.project_id // Proves we can read the config
-    }))
+    
+    // 1. Get the Collection ID from the environment
+    let collection_id = env::var("APPWRITE_COLLECTION_ID_EXPENSES")
+        .unwrap_or_else(|_| "expenses".to_string());
+
+    // 2. Prepare the data for Appwrite
+    // Note: We don't send "id" because Appwrite generates it.
+    let data = json!({
+        "title": payload.title,
+        "amount": payload.amount,
+        "paid_by": payload.paid_by,
+        "split_among": payload.split_among
+    });
+
+    // 3. Send it using the function we just wrote!
+    match appwrite.create_document(&collection_id, data).await {
+        Ok(response) => Json(response),
+        Err(e) => Json(json!({ "error": "Failed to save expense", "details": e }))
+    }
 }
