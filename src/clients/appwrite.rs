@@ -6,10 +6,10 @@ use dotenv::dotenv;
 #[derive(Clone)]
 pub struct AppwriteService {
     client: Client,
-    endpoint: String,
-    project_id: String,
-    api_key: String,
-    database_id: String,
+    pub endpoint: String,
+    pub project_id: String,
+    pub api_key: String,
+    pub database_id: String,
 }
 
 impl AppwriteService {
