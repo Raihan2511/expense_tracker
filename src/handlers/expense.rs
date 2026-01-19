@@ -54,3 +54,26 @@ pub async fn delete_expense(
         Err(e) => Json(json!({ "error": "Failed to delete expense", "details": e })),
     }
 }
+
+pub async fn update_expense(
+    State(appwrite): State<AppwriteService>,
+    Path(id): Path<String>,
+    Json(payload): Json<Expense> 
+) -> Json<Value> {
+    
+    let collection_id = env::var("APPWRITE_COLLECTION_ID_EXPENSES")
+        .unwrap_or_else(|_| "expenses".to_string());
+
+    // We repackage the data just like we did for creating
+    let data = json!({
+        "title": payload.title,
+        "amount": payload.amount,
+        "paid_by": payload.paid_by,
+        "split_among": payload.split_among
+    });
+
+    match appwrite.update_document(&collection_id, &id, data).await {
+        Ok(response) => Json(response),
+        Err(e) => Json(json!({ "error": "Failed to update expense", "details": e }))
+    }
+}

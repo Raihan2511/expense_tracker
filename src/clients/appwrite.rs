@@ -110,4 +110,42 @@ impl AppwriteService {
             Err(format!("Error fetching documents: {:?}", response.text().await))
         }
     }
+
+
+    // ... delete_document is above this ...
+
+    pub async fn update_document(
+        &self, 
+        collection_id: &str, 
+        document_id: &str, 
+        data: serde_json::Value
+    ) -> Result<serde_json::Value, String> {
+        let url = format!(
+            "{}/databases/{}/collections/{}/documents/{}",
+            self.endpoint,
+            self.database_id,
+            collection_id,
+            document_id
+        );
+
+        // We use PATCH for updates (partial changes)
+        let response = self.client.patch(&url)
+            .header("X-Appwrite-Project", &self.project_id)
+            .header("X-Appwrite-Key", &self.api_key)
+            .header("Content-Type", "application/json")
+            .json(&serde_json::json!({
+                "data": data
+            }))
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        if response.status().is_success() {
+            Ok(response.json().await.map_err(|e| e.to_string())?)
+        } else {
+            Err(format!("Error updating document: {:?}", response.text().await))
+        }
+    }
+
+    
 }
