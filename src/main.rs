@@ -12,7 +12,7 @@ mod error;
 
 use clients::appwrite::AppwriteService;
 // Import the actual logic function we wrote
-use handlers::expense::create_expense;
+use handlers::expense::{create_expense,get_expenses,delete_expense};
 // use handlers::user::*; // Uncomment if needed, or keeping it clean for now.
 
 #[tokio::main]
@@ -28,7 +28,9 @@ async fn main() {
     let app = Router::new()
         .route("/", get(health_check))
         // We use POST here because we are CREATING an expense
-        .route("/expenses", post(create_expense)) 
+        .route("/expenses", post(create_expense).get(get_expenses))
+        // NEW ROUTE: Note the "/:id" part!
+        .route("/expenses/:id", axum::routing::delete(delete_expense)) 
         .with_state(appwrite_service);
 
     // 4. Start the Server

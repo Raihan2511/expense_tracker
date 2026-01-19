@@ -65,4 +65,49 @@ impl AppwriteService {
             Err(format!("Error: {:?}", response.text().await))
         }
     }
+
+    pub async fn delete_document(&self, collection_id: &str, document_id: &str) -> Result<(), String> {
+        let url = format!(
+            "{}/databases/{}/collections/{}/documents/{}",
+            self.endpoint,
+            self.database_id,
+            collection_id,
+            document_id
+        );
+
+        let response = self.client.delete(&url) // <--- DELETE request
+            .header("X-Appwrite-Project", &self.project_id)
+            .header("X-Appwrite-Key", &self.api_key)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            Err(format!("Error deleting document: {:?}", response.text().await))
+        }
+    }
+
+    pub async fn list_documents(&self, collection_id: &str) -> Result<serde_json::Value, String> {
+        let url = format!(
+            "{}/databases/{}/collections/{}/documents",
+            self.endpoint,
+            self.database_id,
+            collection_id
+        );
+
+        let response = self.client.get(&url)
+            .header("X-Appwrite-Project", &self.project_id)
+            .header("X-Appwrite-Key", &self.api_key)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        if response.status().is_success() {
+            Ok(response.json().await.map_err(|e| e.to_string())?)
+        } else {
+            Err(format!("Error fetching documents: {:?}", response.text().await))
+        }
+    }
 }

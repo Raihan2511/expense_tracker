@@ -1,4 +1,7 @@
-use axum::{extract::State, Json};
+use axum::{
+    extract::{Path, State},
+    Json,
+};
 use serde_json::{json, Value};
 use crate::models::expense::Expense;
 use crate::clients::appwrite::AppwriteService;
@@ -26,5 +29,28 @@ pub async fn create_expense(
     match appwrite.create_document(&collection_id, data).await {
         Ok(response) => Json(response),
         Err(e) => Json(json!({ "error": "Failed to save expense", "details": e }))
+    }
+}
+
+pub async fn get_expenses(State(appwrite): State<AppwriteService>) -> Json<Value> {
+    let collection_id = env::var("APPWRITE_COLLECTION_ID_EXPENSES")
+        .unwrap_or_else(|_| "expenses".to_string());
+
+    match appwrite.list_documents(&collection_id).await {
+        Ok(expenses) => Json(expenses),
+        Err(e) => Json(json!({ "error": "Failed to fetch expenses", "details": e })),
+    }
+}
+
+pub async fn delete_expense(
+    State(appwrite): State<AppwriteService>,
+    Path(id): Path<String>,
+) -> Json<Value> {
+    let collection_id = env::var("APPWRITE_COLLECTION_ID_EXPENSES")
+        .unwrap_or_else(|_| "expenses".to_string());
+
+    match appwrite.delete_document(&collection_id, &id).await {
+        Ok(_) => Json(json!({ "status": "deleted", "id": id })),
+        Err(e) => Json(json!({ "error": "Failed to delete expense", "details": e })),
     }
 }
